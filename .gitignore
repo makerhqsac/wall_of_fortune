@@ -1,0 +1,8 @@
+.DS_Store
+.idea
+/_lib/**
+/hardware/.*lck
+/hardware/*.ger
+/hardware/*.gpi
+/hardware/*.s#*
+/hardware/*.b#*
