@@ -27,15 +27,15 @@ def sensorCallback(channel):
   stamp = datetime.datetime.fromtimestamp(timestamp).strftime('%H:%M:%S')
   if GPIO.input(channel):
     # No magnet
-    print("Sensor HIGH " + stamp + " " + current)
+    print("Sensor HIGH " + stamp + " " + str(current))
   else:
     # Magnet
     print("Sensor LOW " + stamp)
-	# Do game logic here. Advance to next location or win the level.
+    # Do game logic here. Advance to next location or win the level.
 
 def clearLeds():
-  for (l in LEDS)
-	GPIO.output(l,GPIO.LOW)
+  for l in LEDS:
+    GPIO.output(l,GPIO.LOW)
 
 def setLedOn(channel):
   GPIO.output(LEDS[channel],GPIO.HIGH)
@@ -48,6 +48,8 @@ def main():
   # GPIO cleanup function. This will also prevent
   # the user seeing lots of unnecessary error
   # messages.
+  
+  current = 0
 
   # Get initial reading
   sensorCallback(HALL_PIN)
@@ -55,12 +57,12 @@ def main():
   try:
     # Loop until users quits with CTRL-C
     while True :
-	  clearLeds()
+      clearLeds()
       setLedOn(current)
       time.sleep(5)
-	  # Replace the following with an actual LED selector
-      current++
-      if (current >= len(LEDS))
+      # Replace the following with an actual LED selector
+      current += 1
+      if current >= len(LEDS):
         current = 0
       
 
@@ -76,7 +78,7 @@ print("Setup GPIO pin as input")
 # Set Switch GPIO as input
 # Pull high by default
 GPIO.setup(HALL_PIN , GPIO.IN, pull_up_down=GPIO.PUD_UP)
-for (l in LEDS)
+for l in LEDS:
   GPIO.setup(l, GPIO.OUT)
 GPIO.add_event_detect(HALL_PIN, GPIO.BOTH, callback=sensorCallback, bouncetime=200)
 
