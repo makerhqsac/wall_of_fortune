@@ -20,14 +20,14 @@ import argparse
 import gpiozero
 import random
 
-SWITCH_RBIT1        = 22   # pin for red bit 1 (1 on RetroHAT)
-SWITCH_RBIT2        = 23   # pin for red bit 2 (2 on RetroHAT)
-SWITCH_RBIT3        = 27   # pin for red bit 3 (3 on RetroHAT)
-SWITCH_GBIT1        =  6   # pin for green bit 1 (START on RetroHAT)
-SWITCH_GBIT2        =  5   # pin for green bit 2 (SELECT on RetroHAT)
-SWITCH_GBIT3        = 12   # pin for green bit 3 (L_SHLDR on RetroHAT)
-SWITCH_BBIT1        = 13   # pin for blue bit 1 (R_SHLDR on RetroHAT)
-SWITCH_BBIT2        = 20   # pin for blue bit 2 (X on RetroHAT)
+SWITCH_RBIT1        =  4   # pin for red bit 1
+SWITCH_RBIT2        = 17   # pin for red bit 2
+SWITCH_RBIT3        = 27   # pin for red bit 3
+SWITCH_GBIT1        = 22   # pin for green bit 1
+SWITCH_GBIT2        =  5   # pin for green bit 2
+SWITCH_GBIT3        =  6   # pin for green bit 3
+SWITCH_BBIT1        = 20   # pin for blue bit 1
+SWITCH_BBIT2        = 21   # pin for blue bit 2
 
 
 # LED strip configuration:
@@ -98,9 +98,9 @@ def run_main():
     try:
 
         # TODO: implement color override (useful for testing)
-        target_r = random.randint(0, 7) << 5
+        target_r = random.randint(1, 7) << 5
         target_r &= 0xE0
-        target_g = random.randint(0, 7) << 5
+        target_g = random.randint(1, 7) << 5
         target_g &= 0xE0
         target_b = random.randint(0, 3) << 5
         target_b &= 0xC0
