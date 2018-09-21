@@ -11,8 +11,6 @@
 #                                                                             #
 #    Licensed under the GPLv3 - https://www.gnu.org/licenses/gpl-3.0.txt      #
 ###############################################################################
-
-
 import time
 from neopixel import *
 import _rpi_ws281x as ws
@@ -21,13 +19,12 @@ import gpiozero
 import random
 
 
-SECS_PER_REV = 1.06
-REVS_PER_DISPENSE = 2
+# stepper motor configuration:
 MOT_DIR_PIN = 26
 MOT_STEP_PIN = 19
 MOT_SPEED = 400 # in steps per second
 
-
+# button mapping configuration:
 BUTTONS = {
     'rbit1': {'btn': gpiozero.Button(4, pull_up=True), 'latched': True, 'pressed': False },
     'rbit2': {'btn': gpiozero.Button(17, pull_up=True), 'latched': True, 'pressed': False },
@@ -39,8 +36,12 @@ BUTTONS = {
     'bbit2': {'btn': gpiozero.Button(21, pull_up=True), 'latched': False, 'pressed': False }
 }
 
+# dispensing configuration:
+SECS_PER_REV = 1.06
+REVS_PER_DISPENSE = 2
 
-# LED strip configuration:
+
+# led strip configuration:
 LED_COUNT      = 2       # Number of LED pixels.
 LED_PIN        = 18      # GPIO pin connected to the pixels. (Y on RetroHAT)
 LED_FREQ_HZ    = 800000  # LED signal frequency in hertz (usually 800khz)
@@ -55,6 +56,8 @@ PIXEL_TARGET    = 1      # LED number of target color
 
 motor = gpiozero.PhaseEnableMotor(MOT_DIR_PIN, MOT_STEP_PIN)
 
+strip = Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL, ws.WS2812_STRIP)
+strip.begin()
 
 def setupButtons():
     for btn in BUTTONS:
@@ -68,7 +71,7 @@ def handleToggle(pressedBtn):
             BUTTONS[btn]['pressed'] = not BUTTONS[btn]['pressed']
 
 
-def colorWipe(strip, color, wait_ms=50):
+def colorWipe(color, wait_ms=50):
     for i in range(strip.numPixels()):
         strip.setPixelColor(i, color)
         strip.show()
@@ -112,42 +115,49 @@ def dispense(items=1):
     motor.stop()
 
 
+def run_dispense():
+    for i in range(9):
+        colorWipe(Color(0, 0, 255))
+        time.sleep(0.2)
+        colorWipe(Color(255, 0, 0))
+    dispense(1)
+
+
 def run_main():
-    # Process arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--clear', action='store_true', help='clear the display on exit')
-    # parser.add_argument('-t', '--target', action='store_true', help='set specific target color')
+    parser.add_argument('-t', '--test', action='store_true', help='enable test mode')
+    parser.add_argument('-x', '--target', action='store', help='set target to specific color')
     args = parser.parse_args()
 
-    strip = Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL, ws.WS2812_STRIP)
-    strip.begin()
-
+    if args.target: print(f'Target set to {args.target}.')
     print('Press Ctrl-C to quit.')
-    if not args.clear:
-        print('Use "-c" argument to clear LEDs on exit')
 
     try:
         setupButtons()
 
-        # TODO: implement color override (useful for testing)
-        target_r = random.randint(1, 7) << 5
-        target_r &= 0xE0
-        target_g = random.randint(1, 7) << 5
-        target_g &= 0xE0
-        target_b = random.randint(0, 3) << 5
-        target_b &= 0xC0
+        if args.target:
+            target_color = int(args.target)
+        else:
+            target_r = random.randint(1, 7) << 5
+            target_r &= 0xE0
+            target_g = random.randint(1, 7) << 5
+            target_g &= 0xE0
+            target_b = random.randint(0, 3) << 5
+            target_b &= 0xC0
+            target_color = Color(target_r, target_g, target_b)
 
-        target_color = Color(target_r, target_g, target_b)
-
-        print("Target color bits: {0:08b} {1:08b} {2:08b}".format((target_color>>16)&0xFF, (target_color>>8)&0xFF, target_color&0xFF))
+        print("Target color bits: {0:08b} {1:08b} {2:08b}".format((target_color>>16)&0xFF,
+                                                                  (target_color>>8)&0xFF,
+                                                                  target_color&0xFF))
 
         strip.setPixelColor(PIXEL_TARGET, target_color)
-
 
         while True:
             switch_color = readSwitches()
 
-            print("Current bits: {0:08b} {1:08b} {2:08b}".format((switch_color>>16)&0xFF, (switch_color>>8)&0xFF, switch_color&0xFF))
+            print("Current bits: {0:08b} {1:08b} {2:08b}".format((switch_color>>16)&0xFF,
+                                                                 (switch_color>>8)&0xFF,
+                                                                 switch_color&0xFF))
 
             strip.setPixelColor(PIXEL_CURRENT, switch_color)
             strip.show()
@@ -155,12 +165,12 @@ def run_main():
 
             if switch_color == target_color:
                 print("WINNER WINNER!")
-                #return
+                run_dispense()
+                if not args.test:
+                    return
 
     except KeyboardInterrupt:
-        if args.clear:
-            colorWipe(strip, Color(0,0,0), 10)
-
+        colorWipe(Color(0,0,0), 10)
 
 
 # Main program logic follows:
