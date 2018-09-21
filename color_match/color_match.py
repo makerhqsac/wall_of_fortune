@@ -20,14 +20,24 @@ import argparse
 import gpiozero
 import random
 
-SWITCH_RBIT1        =  4   # pin for red bit 1
-SWITCH_RBIT2        = 17   # pin for red bit 2
-SWITCH_RBIT3        = 27   # pin for red bit 3
-SWITCH_GBIT1        = 22   # pin for green bit 1
-SWITCH_GBIT2        =  5   # pin for green bit 2
-SWITCH_GBIT3        =  6   # pin for green bit 3
-SWITCH_BBIT1        = 20   # pin for blue bit 1
-SWITCH_BBIT2        = 21   # pin for blue bit 2
+
+SECS_PER_REV = 1.06
+REVS_PER_DISPENSE = 2
+MOT_DIR_PIN = 26
+MOT_STEP_PIN = 19
+MOT_SPEED = 400 # in steps per second
+
+
+BUTTONS = {
+    'rbit1': {'btn': gpiozero.Button(4, pull_up=True), 'latched': True, 'pressed': False },
+    'rbit2': {'btn': gpiozero.Button(17, pull_up=True), 'latched': True, 'pressed': False },
+    'rbit3': {'btn': gpiozero.Button(27, pull_up=True), 'latched': True, 'pressed': False },
+    'gbit1': {'btn': gpiozero.Button(22, pull_up=True), 'latched': False, 'pressed': False },
+    'gbit2': {'btn': gpiozero.Button(5, pull_up=True), 'latched': False, 'pressed': False },
+    'gbit3': {'btn': gpiozero.Button(6, pull_up=True), 'latched': True, 'pressed': False },
+    'bbit1': {'btn': gpiozero.Button(20, pull_up=True), 'latched': True, 'pressed': False },
+    'bbit2': {'btn': gpiozero.Button(21, pull_up=True), 'latched': False, 'pressed': False }
+}
 
 
 # LED strip configuration:
@@ -43,23 +53,34 @@ PIXEL_CURRENT   = 0      # LED number of current color
 PIXEL_TARGET    = 1      # LED number of target color
 
 
-btn_rbit1 = gpiozero.Button(SWITCH_RBIT1, pull_up=True)
-btn_rbit2 = gpiozero.Button(SWITCH_RBIT2, pull_up=True)
-btn_rbit3 = gpiozero.Button(SWITCH_RBIT3, pull_up=True)
-btn_gbit1 = gpiozero.Button(SWITCH_GBIT1, pull_up=True)
-btn_gbit2 = gpiozero.Button(SWITCH_GBIT2, pull_up=True)
-btn_gbit3 = gpiozero.Button(SWITCH_GBIT3, pull_up=True)
-btn_bbit1 = gpiozero.Button(SWITCH_BBIT1, pull_up=True)
-btn_bbit2 = gpiozero.Button(SWITCH_BBIT2, pull_up=True)
+motor = gpiozero.PhaseEnableMotor(MOT_DIR_PIN, MOT_STEP_PIN)
 
 
-# Define functions which animate LEDs in various ways.
+def setupButtons():
+    for btn in BUTTONS:
+        if not BUTTONS[btn]['latched']:
+            BUTTONS[btn]['btn'].when_pressed = handleToggle(btn)
+
+
+def handleToggle(pressedBtn):
+    for btn in BUTTONS:
+        if BUTTONS[btn]['btn'] == pressedBtn:
+            BUTTONS[btn]['pressed'] = not BUTTONS[btn]['pressed']
+
+
 def colorWipe(strip, color, wait_ms=50):
-    """Wipe color across display a pixel at a time."""
     for i in range(strip.numPixels()):
         strip.setPixelColor(i, color)
         strip.show()
         time.sleep(wait_ms/1000.0)
+
+
+def readSwitch(btn):
+    if BUTTONS[btn]['latched']:
+        return BUTTONS[btn]['btn'].value
+    else:
+        return BUTTONS[btn]['pressed']
+
 
 def readSwitches():
     rbyte = 0
@@ -67,18 +88,28 @@ def readSwitches():
     bbyte = 0
 
     # FIXME: use LS bits or MS bits of each color byte for best color?
-    rbyte |= btn_rbit1.value << 7
-    rbyte |= btn_rbit2.value << 6
-    rbyte |= btn_rbit3.value << 5
+    rbyte |= readSwitch('rbit1') << 7
+    rbyte |= readSwitch('rbit2') << 6
+    rbyte |= readSwitch('rbit3') << 5
 
-    gbyte |= btn_gbit1.value << 7
-    gbyte |= btn_gbit2.value << 6
-    gbyte |= btn_gbit3.value << 5
+    gbyte |= readSwitch('gbit1') << 7
+    gbyte |= readSwitch('gbit2') << 6
+    gbyte |= readSwitch('gbit3') << 5
 
-    bbyte |= btn_bbit1.value << 7
-    bbyte |= btn_bbit2.value << 6
+    bbyte |= readSwitch('bbit1') << 7
+    bbyte |= readSwitch('bbit2') << 6
 
     return (rbyte << 16) | (gbyte << 8) | bbyte
+
+
+def dispense(items=1):
+
+    motor.backward(0.5)
+    motor.enable_device.frequency = MOT_SPEED
+
+    time.sleep(SECS_PER_REV * REVS_PER_DISPENSE * items)
+
+    motor.stop()
 
 
 def run_main():
@@ -96,6 +127,7 @@ def run_main():
         print('Use "-c" argument to clear LEDs on exit')
 
     try:
+        setupButtons()
 
         # TODO: implement color override (useful for testing)
         target_r = random.randint(1, 7) << 5
@@ -128,6 +160,7 @@ def run_main():
     except KeyboardInterrupt:
         if args.clear:
             colorWipe(strip, Color(0,0,0), 10)
+
 
 
 # Main program logic follows:
