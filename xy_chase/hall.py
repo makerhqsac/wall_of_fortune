@@ -18,8 +18,22 @@ import time
 import datetime
 import RPi.GPIO as GPIO
 HALL_PIN = 17
-LEDS = [27,22]
+LEDS = [4,17,18,27,22,23,24]
 current = 0
+ROUTES = [
+[0,1,2],
+[1,2,3],
+[2,3,4],
+[3,4,5],
+[4,5,6],
+[5,6,0],
+[6,0,1]
+];
+ROUTELENGTH = 3
+ROUTES = 5
+currentRoute = 0
+routeIndex = 0
+
 
 def sensorCallback(channel):
   # Called if sensor output changes
@@ -31,7 +45,22 @@ def sensorCallback(channel):
   else:
     # Magnet
     print("Sensor LOW " + stamp)
+    routeIndex += 1
     # Do game logic here. Advance to next location or win the level.
+    if routeIndex < ROUTELENGTH :
+      current = ROUTES[currentRoute][routeIndex]
+      clearLeds()
+      setLedOn(current)
+    else:
+      winner()
+
+def winner():
+    print("winner!")
+    currentRoute += 1
+    routeIndex = 0
+    if currentRoute >= 5:
+      currentRoute = 0
+  
 
 def clearLeds():
   for l in LEDS:

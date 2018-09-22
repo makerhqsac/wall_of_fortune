@@ -6,3 +6,5 @@
 /hardware/*.gpi
 /hardware/*.s#*
 /hardware/*.b#*
+
+*.swp
