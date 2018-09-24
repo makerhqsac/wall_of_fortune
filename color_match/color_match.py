@@ -17,7 +17,11 @@ import _rpi_ws281x as ws
 import argparse
 import gpiozero
 import random
+from utils import comms
 
+
+# game configuration:
+GAME_TIMEOUT_SECS      = 30
 
 # stepper motor configuration:
 MOT_DIR_PIN = 26
@@ -59,48 +63,50 @@ motor = gpiozero.PhaseEnableMotor(MOT_DIR_PIN, MOT_STEP_PIN)
 strip = Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL, ws.WS2812_STRIP)
 strip.begin()
 
-def setupButtons():
+wof = comms.Comms()
+
+def setup_buttons():
     for btn in BUTTONS:
         if not BUTTONS[btn]['latched']:
-            BUTTONS[btn]['btn'].when_pressed = handleToggle(btn)
+            BUTTONS[btn]['btn'].when_pressed = handle_toggle(btn)
 
 
-def handleToggle(pressedBtn):
+def handle_toggle(pressedBtn):
     for btn in BUTTONS:
         if BUTTONS[btn]['btn'] == pressedBtn:
             BUTTONS[btn]['pressed'] = not BUTTONS[btn]['pressed']
 
 
-def colorWipe(color, wait_ms=50):
+def color_wipe(color, wait_ms=50):
     for i in range(strip.numPixels()):
         strip.setPixelColor(i, color)
         strip.show()
         time.sleep(wait_ms/1000.0)
 
 
-def readSwitch(btn):
+def read_switch(btn):
     if BUTTONS[btn]['latched']:
         return BUTTONS[btn]['btn'].value
     else:
         return BUTTONS[btn]['pressed']
 
 
-def readSwitches():
+def read_switches():
     rbyte = 0
     gbyte = 0
     bbyte = 0
 
     # FIXME: use LS bits or MS bits of each color byte for best color?
-    rbyte |= readSwitch('rbit1') << 7
-    rbyte |= readSwitch('rbit2') << 6
-    rbyte |= readSwitch('rbit3') << 5
+    rbyte |= read_switch('rbit1') << 7
+    rbyte |= read_switch('rbit2') << 6
+    rbyte |= read_switch('rbit3') << 5
 
-    gbyte |= readSwitch('gbit1') << 7
-    gbyte |= readSwitch('gbit2') << 6
-    gbyte |= readSwitch('gbit3') << 5
+    gbyte |= read_switch('gbit1') << 7
+    gbyte |= read_switch('gbit2') << 6
+    gbyte |= read_switch('gbit3') << 5
 
-    bbyte |= readSwitch('bbit1') << 7
-    bbyte |= readSwitch('bbit2') << 6
+    bbyte |= read_switch('bbit1') << 7
+    bbyte |= read_switch('bbit2') << 6
 
     return (rbyte << 16) | (gbyte << 8) | bbyte
 
@@ -116,61 +122,85 @@ def dispense(items=1):
 
 
 def run_dispense():
+    print(f"Dispensing prize")
     for i in range(9):
-        colorWipe(Color(0, 0, 255))
+        color_wipe(Color(0, 0, 255))
         time.sleep(0.2)
-        colorWipe(Color(255, 0, 0))
+        color_wipe(Color(255, 0, 0))
     dispense(1)
+
+
+def run_game(args):
+    if args.target:
+        target_color = int(args.target)
+    else:
+        target_r = random.randint(1, 7) << 5
+        target_r &= 0xE0
+        target_g = random.randint(1, 7) << 5
+        target_g &= 0xE0
+        target_b = random.randint(0, 3) << 5
+        target_b &= 0xC0
+        target_color = Color(target_r, target_g, target_b)
+
+    print("Starting game with target color bits: {0:08b} {1:08b} {2:08b}".format((target_color >> 16) & 0xFF,
+                                                                                 (target_color >> 8) & 0xFF,
+                                                                                 target_color & 0xFF))
+
+    strip.setPixelColor(PIXEL_TARGET, target_color)
+
+    start_time = time.time()
+
+    while True:
+        switch_color = read_switches()
+
+        if args.debug:
+            print("Current bits: {0:08b} {1:08b} {2:08b}".format((switch_color >> 16) & 0xFF,
+                                                                 (switch_color >> 8) & 0xFF,
+                                                                 switch_color & 0xFF))
+
+        strip.setPixelColor(PIXEL_CURRENT, switch_color)
+        strip.show()
+        time.sleep(0.5)
+
+        if switch_color == target_color:
+            print("WINNER WINNER!")
+            run_dispense()
+            return
+        elif start_time + GAME_TIMEOUT_SECS < time.time():
+            print("TIMEOUT - YOU LOOSE")
+            return
 
 
 def run_main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-t', '--test', action='store_true', help='enable test mode')
+    parser.add_argument('-d', '--debug', action='store_true', help='enable debug mode')
     parser.add_argument('-x', '--target', action='store', help='set target to specific color')
+    parser.add_argument('-l', '--local', action='store_true', help='local mode - play game over and over')
     args = parser.parse_args()
 
     if args.target: print(f'Target set to {args.target}.')
     print('Press Ctrl-C to quit.')
 
+    wof.begin("colormatch")
+
     try:
-        setupButtons()
-
-        if args.target:
-            target_color = int(args.target)
-        else:
-            target_r = random.randint(1, 7) << 5
-            target_r &= 0xE0
-            target_g = random.randint(1, 7) << 5
-            target_g &= 0xE0
-            target_b = random.randint(0, 3) << 5
-            target_b &= 0xC0
-            target_color = Color(target_r, target_g, target_b)
-
-        print("Target color bits: {0:08b} {1:08b} {2:08b}".format((target_color>>16)&0xFF,
-                                                                  (target_color>>8)&0xFF,
-                                                                  target_color&0xFF))
-
-        strip.setPixelColor(PIXEL_TARGET, target_color)
+        setup_buttons()
 
         while True:
-            switch_color = readSwitches()
-
-            print("Current bits: {0:08b} {1:08b} {2:08b}".format((switch_color>>16)&0xFF,
-                                                                 (switch_color>>8)&0xFF,
-                                                                 switch_color&0xFF))
-
-            strip.setPixelColor(PIXEL_CURRENT, switch_color)
-            strip.show()
-            time.sleep(0.5)
-
-            if switch_color == target_color:
-                print("WINNER WINNER!")
-                run_dispense()
-                if not args.test:
-                    return
+            if args.local:
+                run_game(args)
+            elif wof.available():
+                (origin, message) = wof.recv()
+                print(f"Received network message from {origin}: {message}")
+                if message == 'RESET':
+                    run_game(args)
+                else:
+                    print(f"Unknown message: {message}")
+            else:
+                time.sleep(1)
 
     except KeyboardInterrupt:
-        colorWipe(Color(0,0,0), 10)
+        color_wipe(Color(0, 0, 0), 10)
 
 
 # Main program logic follows:
