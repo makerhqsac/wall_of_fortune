@@ -204,11 +204,14 @@ def run_main():
         while True:
             if args.local:
                 run_game(args)
+                color_wipe(Color(0, 0, 0))
+                time.sleep(3)
             elif wof.available():
                 (origin, message) = wof.recv()
                 print(f"Received network message from {origin}: {message}")
                 if message == 'RESET':
                     run_game(args)
+                    color_wipe(Color(0, 0, 0))
                 else:
                     print(f"Unknown message: {message}")
             else:
