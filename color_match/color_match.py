@@ -30,14 +30,14 @@ MOT_SPEED = 400 # in steps per second
 
 # button mapping configuration:
 BUTTONS = {
-    'rbit1': {'btn': gpiozero.Button(4, pull_up=True), 'latched': True, 'pressed': False },
-    'rbit2': {'btn': gpiozero.Button(17, pull_up=True), 'latched': True, 'pressed': False },
-    'rbit3': {'btn': gpiozero.Button(27, pull_up=True), 'latched': True, 'pressed': False },
-    'gbit1': {'btn': gpiozero.Button(22, pull_up=True), 'latched': False, 'pressed': False },
-    'gbit2': {'btn': gpiozero.Button(5, pull_up=True), 'latched': False, 'pressed': False },
-    'gbit3': {'btn': gpiozero.Button(6, pull_up=True), 'latched': True, 'pressed': False },
-    'bbit1': {'btn': gpiozero.Button(20, pull_up=True), 'latched': True, 'pressed': False },
-    'bbit2': {'btn': gpiozero.Button(21, pull_up=True), 'latched': False, 'pressed': False }
+    'r1': {'btn': gpiozero.Button(4, pull_up=True, bounce_time=0.1), 'latched': True, 'pressed': False },
+    'r2': {'btn': gpiozero.Button(17, pull_up=True, bounce_time=0.1), 'latched': True, 'pressed': False },
+    'r3': {'btn': gpiozero.Button(27, pull_up=True, bounce_time=0.1), 'latched': True, 'pressed': False },
+    'g1': {'btn': gpiozero.Button(22, pull_up=True, bounce_time=0.1), 'latched': False, 'pressed': False },
+    'g2': {'btn': gpiozero.Button(5, pull_up=True, bounce_time=0.1), 'latched': False, 'pressed': False },
+    'g3': {'btn': gpiozero.Button(6, pull_up=True, bounce_time=0.1), 'latched': True, 'pressed': False },
+    'b1': {'btn': gpiozero.Button(20, pull_up=True, bounce_time=0.1), 'latched': True, 'pressed': False },
+    'b2': {'btn': gpiozero.Button(21, pull_up=True, bounce_time=0.1), 'latched': False, 'pressed': False }
 }
 
 # dispensing configuration:
@@ -77,11 +77,11 @@ def handle_toggle(pressedBtn):
             BUTTONS[btn]['pressed'] = not BUTTONS[btn]['pressed']
 
 
-def color_wipe(color, wait_ms=50):
+def color_wipe(color, wait=0.05):
     for i in range(strip.numPixels()):
         strip.setPixelColor(i, color)
         strip.show()
-        time.sleep(wait_ms/1000.0)
+        time.sleep(wait)
 
 
 def read_switch(btn):
@@ -97,16 +97,16 @@ def read_switches():
     bbyte = 0
 
     # FIXME: use LS bits or MS bits of each color byte for best color?
-    rbyte |= read_switch('rbit1') << 7
-    rbyte |= read_switch('rbit2') << 6
-    rbyte |= read_switch('rbit3') << 5
+    rbyte |= read_switch('r1') << 7
+    rbyte |= read_switch('r2') << 6
+    rbyte |= read_switch('r3') << 5
 
-    gbyte |= read_switch('gbit1') << 7
-    gbyte |= read_switch('gbit2') << 6
-    gbyte |= read_switch('gbit3') << 5
+    gbyte |= read_switch('g1') << 7
+    gbyte |= read_switch('g2') << 6
+    gbyte |= read_switch('g3') << 5
 
-    bbyte |= read_switch('bbit1') << 7
-    bbyte |= read_switch('bbit2') << 6
+    bbyte |= read_switch('b1') << 7
+    bbyte |= read_switch('b2') << 6
 
     return (rbyte << 16) | (gbyte << 8) | bbyte
 
@@ -128,6 +128,14 @@ def run_dispense():
         time.sleep(0.2)
         color_wipe(Color(255, 0, 0))
     dispense(1)
+
+
+def blink_panels(color, times, delay, wait=0):
+    for i in range(times):
+        color_wipe(color, wait)
+        time.sleep(delay)
+        color_wipe(0, 0)
+        time.sleep(delay)
 
 
 def run_game(args):
@@ -154,20 +162,27 @@ def run_game(args):
         switch_color = read_switches()
 
         if args.debug:
-            print("Current bits: {0:08b} {1:08b} {2:08b}".format((switch_color >> 16) & 0xFF,
-                                                                 (switch_color >> 8) & 0xFF,
-                                                                 switch_color & 0xFF))
+            if start_time % 5 == 0:
+                print("Current bits: {0:08b} {1:08b} {2:08b}    ::   target bits:  {3:08b} {4:08b} {5:08b}".format(
+                    (switch_color >> 16) & 0xFF,
+                    (switch_color >> 8) & 0xFF,
+                    switch_color & 0xFF,
+                    (target_color >> 16) & 0xFF,
+                    (target_color >> 8) & 0xFF,
+                    target_color & 0xFF))
 
         strip.setPixelColor(PIXEL_CURRENT, switch_color)
         strip.show()
-        time.sleep(0.5)
+        time.sleep(0.1)
 
         if switch_color == target_color:
             print("WINNER WINNER!")
+            blink_panels(Color(0, 255, 0), 3, 0.1)
             run_dispense()
             return
         elif start_time + GAME_TIMEOUT_SECS < time.time():
             print("TIMEOUT - YOU LOOSE")
+            blink_panels(Color(255, 0, 0), 5, 0.2)
             return
 
 
@@ -200,7 +215,7 @@ def run_main():
                 time.sleep(1)
 
     except KeyboardInterrupt:
-        color_wipe(Color(0, 0, 0), 10)
+        color_wipe(Color(0, 0, 0), 0.1)
 
 
 # Main program logic follows:
