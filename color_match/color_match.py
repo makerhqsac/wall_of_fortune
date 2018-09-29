@@ -142,9 +142,10 @@ def run_game(args):
         target_b &= 0xC0
         target_color = Color(target_r, target_g, target_b)
 
-    print("Starting game with target color bits: {0:08b} {1:08b} {2:08b}".format((target_color >> 16) & 0xFF,
-                                                                                 (target_color >> 8) & 0xFF,
-                                                                                 target_color & 0xFF))
+    if args.debug:
+        print("Starting game with target color bits: {0:08b} {1:08b} {2:08b}".format((target_color >> 16) & 0xFF,
+                                                                                     (target_color >> 8) & 0xFF,
+                                                                                     target_color & 0xFF))
 
     strip.setPixelColor(PIXEL_TARGET, target_color)
 
@@ -170,12 +171,14 @@ def run_game(args):
         time.sleep(0.1)
 
         if switch_color == target_color:
-            print("WINNER WINNER!")
+            if args.debug:
+                print("WINNER WINNER!")
             blink_panels(Color(0, 255, 0), 6, 0.2)
             dispense(1)
             return
         elif start_time + GAME_TIMEOUT_SECS < time.time():
-            print("TIMEOUT - YOU LOOSE")
+            if args.debug:
+                print("TIMEOUT - YOU LOOSE")
             blink_panels(Color(255, 0, 0), 6, 0.3)
             return
 
@@ -187,8 +190,9 @@ def run_main():
     parser.add_argument('-l', '--local', action='store_true', help='local mode - play game over and over')
     args = parser.parse_args()
 
-    if args.target: print("Target set to {0}.".format(args.target))
-    print('Press Ctrl-C to quit.')
+    if args.target:
+        if args.debug:
+            print("Target set to {0}.".format(args.target))
 
     wof.begin("colormatch")
 
@@ -202,12 +206,14 @@ def run_main():
                 time.sleep(3)
             elif wof.available():
                 (origin, message) = wof.recv()
-                print("Received network message from {0}: {1}".format(origin, message))
+                if args.debug:
+                    print("Received network message from {0}: {1}".format(origin, message))
                 if message == 'RESET':
                     run_game(args)
                     color_wipe(Color(0, 0, 0))
                 else:
-                    print("Unknown message: {0}".format(message))
+                    if args.debug:
+                        print("Unknown message: {0}".format(message))
             else:
                 time.sleep(1)
 
