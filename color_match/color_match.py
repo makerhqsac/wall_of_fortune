@@ -210,7 +210,7 @@ def run_main():
                     print("Received network message from {0}: {1}".format(origin, message))
                 if message == 'RESET':
                     run_game(args)
-                    color_wipe(Color(0, 0, 0))
+                    color_wipe(Color(0, 0, 0), 0)
                 else:
                     if args.debug:
                         print("Unknown message: {0}".format(message))
