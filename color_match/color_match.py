@@ -21,7 +21,7 @@ from utils import comms
 
 
 # game configuration:
-GAME_TIMEOUT_SECS      = 30
+GAME_TIMEOUT_SECS      = 90
 
 # stepper motor configuration:
 MOT_DIR_PIN = 26
@@ -30,14 +30,14 @@ MOT_SPEED = 400 # in steps per second
 
 # button mapping configuration:
 BUTTONS = {
-    'r1': {'btn': gpiozero.Button(4, pull_up=True, bounce_time=0.1), 'latched': True, 'pressed': False },
-    'r2': {'btn': gpiozero.Button(17, pull_up=True, bounce_time=0.1), 'latched': True, 'pressed': False },
-    'r3': {'btn': gpiozero.Button(27, pull_up=True, bounce_time=0.1), 'latched': True, 'pressed': False },
-    'g1': {'btn': gpiozero.Button(22, pull_up=True, bounce_time=0.1), 'latched': False, 'pressed': False },
-    'g2': {'btn': gpiozero.Button(5, pull_up=True, bounce_time=0.1), 'latched': False, 'pressed': False },
-    'g3': {'btn': gpiozero.Button(6, pull_up=True, bounce_time=0.1), 'latched': True, 'pressed': False },
-    'b1': {'btn': gpiozero.Button(20, pull_up=True, bounce_time=0.1), 'latched': True, 'pressed': False },
-    'b2': {'btn': gpiozero.Button(21, pull_up=True, bounce_time=0.1), 'latched': False, 'pressed': False }
+    'r1': {'btn': gpiozero.Button(4, pull_up=True, bounce_time=0.01), 'latched': True, 'pressed': False },
+    'r2': {'btn': gpiozero.Button(17, pull_up=True, bounce_time=0.01), 'latched': True, 'pressed': False },
+    'r3': {'btn': gpiozero.Button(27, pull_up=True, bounce_time=0.01), 'latched': True, 'pressed': False },
+    'g1': {'btn': gpiozero.Button(22, pull_up=True, bounce_time=0.01), 'latched': False, 'pressed': False },
+    'g2': {'btn': gpiozero.Button(5, pull_up=True, bounce_time=0.01), 'latched': False, 'pressed': False },
+    'g3': {'btn': gpiozero.Button(6, pull_up=True, bounce_time=0.01), 'latched': False, 'pressed': False },
+    'b1': {'btn': gpiozero.Button(20, pull_up=True, bounce_time=0.01), 'latched': False, 'pressed': False },
+    'b2': {'btn': gpiozero.Button(21, pull_up=True, bounce_time=0.01), 'latched': True, 'pressed': False }
 }
 
 # dispensing configuration:
@@ -65,10 +65,10 @@ strip.begin()
 
 wof = comms.Comms()
 
-def setup_buttons():
+def setup_buttons(args):
     for btn in BUTTONS:
         if not BUTTONS[btn]['latched']:
-            BUTTONS[btn]['btn'].when_pressed = handle_toggle(btn)
+            BUTTONS[btn]['btn'].when_pressed = handle_toggle
 
 
 def handle_toggle(pressedBtn):
@@ -121,15 +121,6 @@ def dispense(items=1):
     motor.stop()
 
 
-def run_dispense():
-    print(f"Dispensing prize")
-    for i in range(9):
-        color_wipe(Color(0, 0, 255))
-        time.sleep(0.2)
-        color_wipe(Color(255, 0, 0))
-    dispense(1)
-
-
 def blink_panels(color, times, delay, wait=0):
     for i in range(times):
         color_wipe(color, wait)
@@ -157,12 +148,14 @@ def run_game(args):
     strip.setPixelColor(PIXEL_TARGET, target_color)
 
     start_time = time.time()
+    debug_time = start_time
 
     while True:
         switch_color = read_switches()
 
         if args.debug:
-            if start_time % 5 == 0:
+            if time.time() >= debug_time:
+                debug_time = time.time() + 5
                 print("Current bits: {0:08b} {1:08b} {2:08b}    ::   target bits:  {3:08b} {4:08b} {5:08b}".format(
                     (switch_color >> 16) & 0xFF,
                     (switch_color >> 8) & 0xFF,
@@ -177,8 +170,8 @@ def run_game(args):
 
         if switch_color == target_color:
             print("WINNER WINNER!")
-            blink_panels(Color(0, 255, 0), 3, 0.1)
-            run_dispense()
+            blink_panels(Color(0, 255, 0), 5, 0.2)
+            dispense(1)
             return
         elif start_time + GAME_TIMEOUT_SECS < time.time():
             print("TIMEOUT - YOU LOOSE")
@@ -193,27 +186,27 @@ def run_main():
     parser.add_argument('-l', '--local', action='store_true', help='local mode - play game over and over')
     args = parser.parse_args()
 
-    if args.target: print(f'Target set to {args.target}.')
+    if args.target: print("Target set to {0}.".format(args.target))
     print('Press Ctrl-C to quit.')
 
     wof.begin("colormatch")
 
     try:
-        setup_buttons()
+        setup_buttons(args)
 
         while True:
             if args.local:
                 run_game(args)
-                color_wipe(Color(0, 0, 0))
+                color_wipe(Color(0, 0, 0), 0)
                 time.sleep(3)
             elif wof.available():
                 (origin, message) = wof.recv()
-                print(f"Received network message from {origin}: {message}")
+                print("Received network message from {0}: {1}".format(origin, message))
                 if message == 'RESET':
                     run_game(args)
                     color_wipe(Color(0, 0, 0))
                 else:
-                    print(f"Unknown message: {message}")
+                    print("Unknown message: {0}".format(message))
             else:
                 time.sleep(1)
 
