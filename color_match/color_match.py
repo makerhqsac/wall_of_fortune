@@ -22,6 +22,7 @@ from utils import comms
 
 # game configuration:
 GAME_TIMEOUT_SECS      = 90
+DEBUG_STATUS_SECS      = 5
 
 # stepper motor configuration:
 MOT_DIR_PIN = 26
@@ -155,7 +156,7 @@ def run_game(args):
 
         if args.debug:
             if time.time() >= debug_time:
-                debug_time = time.time() + 5
+                debug_time = time.time() + DEBUG_STATUS_SECS
                 print("Current bits: {0:08b} {1:08b} {2:08b}    ::   target bits:  {3:08b} {4:08b} {5:08b}".format(
                     (switch_color >> 16) & 0xFF,
                     (switch_color >> 8) & 0xFF,
@@ -170,12 +171,12 @@ def run_game(args):
 
         if switch_color == target_color:
             print("WINNER WINNER!")
-            blink_panels(Color(0, 255, 0), 5, 0.2)
+            blink_panels(Color(0, 255, 0), 6, 0.2)
             dispense(1)
             return
         elif start_time + GAME_TIMEOUT_SECS < time.time():
             print("TIMEOUT - YOU LOOSE")
-            blink_panels(Color(255, 0, 0), 5, 0.2)
+            blink_panels(Color(255, 0, 0), 6, 0.3)
             return
 
 
