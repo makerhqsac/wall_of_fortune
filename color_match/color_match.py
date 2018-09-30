@@ -23,7 +23,7 @@ from utils import comms
 # game configuration:
 GAME_TIMEOUT_SECS       = 90
 DEBUG_STATUS_SECS       = 5
-COLOR_HIGHEST_BIT       = 5
+COLOR_HIGHEST_BIT       = 7
 
 
 # stepper motor configuration:
