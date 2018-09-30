@@ -7,4 +7,5 @@
 /hardware/*.s#*
 /hardware/*.b#*
 
+__pycache__/
 *.swp
