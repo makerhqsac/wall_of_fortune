@@ -21,13 +21,16 @@ from utils import comms
 
 
 # game configuration:
-GAME_TIMEOUT_SECS      = 90
-DEBUG_STATUS_SECS      = 5
+GAME_TIMEOUT_SECS       = 90
+DEBUG_STATUS_SECS       = 5
+COLOR_HIGHEST_BIT       = 7
+
 
 # stepper motor configuration:
-MOT_DIR_PIN = 26
-MOT_STEP_PIN = 19
-MOT_SPEED = 400 # in steps per second
+MOT_DIR_PIN             = 26
+MOT_STEP_PIN            = 19
+MOT_SPEED               = 400 # in steps per second
+
 
 # button mapping configuration:
 BUTTONS = {
@@ -42,21 +45,22 @@ BUTTONS = {
 }
 
 # dispensing configuration:
-SECS_PER_REV = 1.06
-REVS_PER_DISPENSE = 2
+SECS_PER_REV            = 1.06
+REVS_PER_DISPENSE       = 1
 
 
 # led strip configuration:
-LED_COUNT      = 2       # Number of LED pixels.
-LED_PIN        = 18      # GPIO pin connected to the pixels. (Y on RetroHAT)
-LED_FREQ_HZ    = 800000  # LED signal frequency in hertz (usually 800khz)
-LED_DMA        = 10      # DMA channel to use for generating signal (try 10)
-LED_BRIGHTNESS = 255     # Set to 0 for darkest and 255 for brightest
-LED_INVERT     = False   # True to invert the signal (when using NPN transistor level shift)
-LED_CHANNEL    = 0       # set to '1' for GPIOs 13, 19, 41, 45 or 53
+LED_COUNT               = 2       # Number of LED pixels.
+LED_PIN                 = 18      # GPIO pin connected to the pixels. (Y on RetroHAT)
+LED_FREQ_HZ             = 800000  # LED signal frequency in hertz (usually 800khz)
+LED_DMA                 = 10      # DMA channel to use for generating signal (try 10)
+LED_BRIGHTNESS          = 255     # Set to 0 for darkest and 255 for brightest
+LED_INVERT              = False   # True to invert the signal (when using NPN transistor level shift)
+LED_CHANNEL             = 0       # set to '1' for GPIOs 13, 19, 41, 45 or 53
 
-PIXEL_CURRENT   = 0      # LED number of current color
-PIXEL_TARGET    = 1      # LED number of target color
+
+PIXEL_CURRENT           = 0      # LED number of current color
+PIXEL_TARGET            = 1      # LED number of target color
 
 
 motor = gpiozero.PhaseEnableMotor(MOT_DIR_PIN, MOT_STEP_PIN)
@@ -65,6 +69,7 @@ strip = Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, 
 strip.begin()
 
 wof = comms.Comms()
+
 
 def setup_buttons(args):
     for btn in BUTTONS:
@@ -98,16 +103,16 @@ def read_switches():
     bbyte = 0
 
     # FIXME: use LS bits or MS bits of each color byte for best color?
-    rbyte |= read_switch('r1') << 7
-    rbyte |= read_switch('r2') << 6
-    rbyte |= read_switch('r3') << 5
+    rbyte |= read_switch('r1') << COLOR_HIGHEST_BIT
+    rbyte |= read_switch('r2') << COLOR_HIGHEST_BIT - 1
+    rbyte |= read_switch('r3') << COLOR_HIGHEST_BIT - 2
 
-    gbyte |= read_switch('g1') << 7
-    gbyte |= read_switch('g2') << 6
-    gbyte |= read_switch('g3') << 5
+    gbyte |= read_switch('g1') << COLOR_HIGHEST_BIT
+    gbyte |= read_switch('g2') << COLOR_HIGHEST_BIT - 1
+    gbyte |= read_switch('g3') << COLOR_HIGHEST_BIT - 2
 
-    bbyte |= read_switch('b1') << 7
-    bbyte |= read_switch('b2') << 6
+    bbyte |= read_switch('b1') << COLOR_HIGHEST_BIT
+    bbyte |= read_switch('b2') << COLOR_HIGHEST_BIT - 1
 
     return (rbyte << 16) | (gbyte << 8) | bbyte
 
@@ -131,16 +136,21 @@ def blink_panels(color, times, delay, wait=0):
 
 
 def run_game(args):
+
+    target_color = 0
+    switch_color = read_switches()
+
     if args.target:
         target_color = int(args.target)
     else:
-        target_r = random.randint(1, 7) << 5
-        target_r &= 0xE0
-        target_g = random.randint(1, 7) << 5
-        target_g &= 0xE0
-        target_b = random.randint(0, 3) << 5
-        target_b &= 0xC0
-        target_color = Color(target_r, target_g, target_b)
+        while target_color == 0 or target_color == switch_color:
+            target_r = random.randint(1, 7) << COLOR_HIGHEST_BIT - 2
+            target_r &= 0xE0
+            target_g = random.randint(1, 7) << COLOR_HIGHEST_BIT - 2
+            target_g &= 0xE0
+            target_b = random.randint(0, 3) << COLOR_HIGHEST_BIT - 2
+            target_b &= 0xC0
+            target_color = Color(target_r, target_g, target_b)
 
     if args.debug:
         print("Starting game with target color bits: {0:08b} {1:08b} {2:08b}".format((target_color >> 16) & 0xFF,
