@@ -21,7 +21,8 @@ from utils import comms
 
 
 # game configuration:
-GAME_TIMEOUT_SECS      = 30
+GAME_TIMEOUT_SECS      = 90
+DEBUG_STATUS_SECS      = 5
 
 # stepper motor configuration:
 MOT_DIR_PIN = 26
@@ -30,14 +31,14 @@ MOT_SPEED = 400 # in steps per second
 
 # button mapping configuration:
 BUTTONS = {
-    'rbit1': {'btn': gpiozero.Button(4, pull_up=True), 'latched': True, 'pressed': False },
-    'rbit2': {'btn': gpiozero.Button(17, pull_up=True), 'latched': True, 'pressed': False },
-    'rbit3': {'btn': gpiozero.Button(27, pull_up=True), 'latched': True, 'pressed': False },
-    'gbit1': {'btn': gpiozero.Button(22, pull_up=True), 'latched': False, 'pressed': False },
-    'gbit2': {'btn': gpiozero.Button(5, pull_up=True), 'latched': False, 'pressed': False },
-    'gbit3': {'btn': gpiozero.Button(6, pull_up=True), 'latched': True, 'pressed': False },
-    'bbit1': {'btn': gpiozero.Button(20, pull_up=True), 'latched': True, 'pressed': False },
-    'bbit2': {'btn': gpiozero.Button(21, pull_up=True), 'latched': False, 'pressed': False }
+    'r1': {'btn': gpiozero.Button(4, pull_up=True, bounce_time=0.01), 'latched': True, 'pressed': False },
+    'r2': {'btn': gpiozero.Button(17, pull_up=True, bounce_time=0.01), 'latched': True, 'pressed': False },
+    'r3': {'btn': gpiozero.Button(27, pull_up=True, bounce_time=0.01), 'latched': True, 'pressed': False },
+    'g1': {'btn': gpiozero.Button(22, pull_up=True, bounce_time=0.01), 'latched': False, 'pressed': False },
+    'g2': {'btn': gpiozero.Button(5, pull_up=True, bounce_time=0.01), 'latched': False, 'pressed': False },
+    'g3': {'btn': gpiozero.Button(6, pull_up=True, bounce_time=0.01), 'latched': False, 'pressed': False },
+    'b1': {'btn': gpiozero.Button(20, pull_up=True, bounce_time=0.01), 'latched': False, 'pressed': False },
+    'b2': {'btn': gpiozero.Button(21, pull_up=True, bounce_time=0.01), 'latched': True, 'pressed': False }
 }
 
 # dispensing configuration:
@@ -65,10 +66,10 @@ strip.begin()
 
 wof = comms.Comms()
 
-def setup_buttons():
+def setup_buttons(args):
     for btn in BUTTONS:
         if not BUTTONS[btn]['latched']:
-            BUTTONS[btn]['btn'].when_pressed = handle_toggle(btn)
+            BUTTONS[btn]['btn'].when_pressed = handle_toggle
 
 
 def handle_toggle(pressedBtn):
@@ -77,11 +78,11 @@ def handle_toggle(pressedBtn):
             BUTTONS[btn]['pressed'] = not BUTTONS[btn]['pressed']
 
 
-def color_wipe(color, wait_ms=50):
+def color_wipe(color, wait=0.05):
     for i in range(strip.numPixels()):
         strip.setPixelColor(i, color)
         strip.show()
-        time.sleep(wait_ms/1000.0)
+        time.sleep(wait)
 
 
 def read_switch(btn):
@@ -97,16 +98,16 @@ def read_switches():
     bbyte = 0
 
     # FIXME: use LS bits or MS bits of each color byte for best color?
-    rbyte |= read_switch('rbit1') << 7
-    rbyte |= read_switch('rbit2') << 6
-    rbyte |= read_switch('rbit3') << 5
+    rbyte |= read_switch('r1') << 7
+    rbyte |= read_switch('r2') << 6
+    rbyte |= read_switch('r3') << 5
 
-    gbyte |= read_switch('gbit1') << 7
-    gbyte |= read_switch('gbit2') << 6
-    gbyte |= read_switch('gbit3') << 5
+    gbyte |= read_switch('g1') << 7
+    gbyte |= read_switch('g2') << 6
+    gbyte |= read_switch('g3') << 5
 
-    bbyte |= read_switch('bbit1') << 7
-    bbyte |= read_switch('bbit2') << 6
+    bbyte |= read_switch('b1') << 7
+    bbyte |= read_switch('b2') << 6
 
     return (rbyte << 16) | (gbyte << 8) | bbyte
 
@@ -121,13 +122,12 @@ def dispense(items=1):
     motor.stop()
 
 
-def run_dispense():
-    print(f"Dispensing prize")
-    for i in range(9):
-        color_wipe(Color(0, 0, 255))
-        time.sleep(0.2)
-        color_wipe(Color(255, 0, 0))
-    dispense(1)
+def blink_panels(color, times, delay, wait=0):
+    for i in range(times):
+        color_wipe(color, wait)
+        time.sleep(delay)
+        color_wipe(0, 0)
+        time.sleep(delay)
 
 
 def run_game(args):
@@ -142,32 +142,44 @@ def run_game(args):
         target_b &= 0xC0
         target_color = Color(target_r, target_g, target_b)
 
-    print("Starting game with target color bits: {0:08b} {1:08b} {2:08b}".format((target_color >> 16) & 0xFF,
-                                                                                 (target_color >> 8) & 0xFF,
-                                                                                 target_color & 0xFF))
+    if args.debug:
+        print("Starting game with target color bits: {0:08b} {1:08b} {2:08b}".format((target_color >> 16) & 0xFF,
+                                                                                     (target_color >> 8) & 0xFF,
+                                                                                     target_color & 0xFF))
 
     strip.setPixelColor(PIXEL_TARGET, target_color)
 
     start_time = time.time()
+    debug_time = start_time
 
     while True:
         switch_color = read_switches()
 
         if args.debug:
-            print("Current bits: {0:08b} {1:08b} {2:08b}".format((switch_color >> 16) & 0xFF,
-                                                                 (switch_color >> 8) & 0xFF,
-                                                                 switch_color & 0xFF))
+            if time.time() >= debug_time:
+                debug_time = time.time() + DEBUG_STATUS_SECS
+                print("Current bits: {0:08b} {1:08b} {2:08b}    ::   target bits:  {3:08b} {4:08b} {5:08b}".format(
+                    (switch_color >> 16) & 0xFF,
+                    (switch_color >> 8) & 0xFF,
+                    switch_color & 0xFF,
+                    (target_color >> 16) & 0xFF,
+                    (target_color >> 8) & 0xFF,
+                    target_color & 0xFF))
 
         strip.setPixelColor(PIXEL_CURRENT, switch_color)
         strip.show()
-        time.sleep(0.5)
+        time.sleep(0.1)
 
         if switch_color == target_color:
-            print("WINNER WINNER!")
-            run_dispense()
+            if args.debug:
+                print("WINNER WINNER!")
+            blink_panels(Color(0, 255, 0), 6, 0.2)
+            dispense(1)
             return
         elif start_time + GAME_TIMEOUT_SECS < time.time():
-            print("TIMEOUT - YOU LOOSE")
+            if args.debug:
+                print("TIMEOUT - YOU LOOSE")
+            blink_panels(Color(255, 0, 0), 6, 0.3)
             return
 
 
@@ -178,29 +190,35 @@ def run_main():
     parser.add_argument('-l', '--local', action='store_true', help='local mode - play game over and over')
     args = parser.parse_args()
 
-    if args.target: print(f'Target set to {args.target}.')
-    print('Press Ctrl-C to quit.')
+    if args.target:
+        if args.debug:
+            print("Target set to {0}.".format(args.target))
 
     wof.begin("colormatch")
 
     try:
-        setup_buttons()
+        setup_buttons(args)
 
         while True:
             if args.local:
                 run_game(args)
+                color_wipe(Color(0, 0, 0), 0)
+                time.sleep(3)
             elif wof.available():
                 (origin, message) = wof.recv()
-                print(f"Received network message from {origin}: {message}")
+                if args.debug:
+                    print("Received network message from {0}: {1}".format(origin, message))
                 if message == 'RESET':
                     run_game(args)
+                    color_wipe(Color(0, 0, 0), 0)
                 else:
-                    print(f"Unknown message: {message}")
+                    if args.debug:
+                        print("Unknown message: {0}".format(message))
             else:
                 time.sleep(1)
 
     except KeyboardInterrupt:
-        color_wipe(Color(0, 0, 0), 10)
+        color_wipe(Color(0, 0, 0), 0.1)
 
 
 # Main program logic follows:
