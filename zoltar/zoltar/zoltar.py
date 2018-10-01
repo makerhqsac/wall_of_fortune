@@ -1,5 +1,7 @@
 from gpiozero import AngularServo, Button, LED
 from time import sleep
+from util import comms
+import argparse
 
 SERVO_GPIO          = 19
 SERVO_MIN_ANGLE     = 0
@@ -64,9 +66,27 @@ class Zoltar(object):
 
 
 if __name__ == "__main__":
-    button = Button(BUTTON_GPIO)
-    a_zoltar = Zoltar()
-    button.when_pressed = a_zoltar.stop_moving
-    a_zoltar.is_moving = True
-    a_zoltar.begin_moving()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-l', '--local', action='store_true', help='local mode - play game over and over')
+    args = parser.parse_args()
 
+    wof = comms.Comms()
+    wof.begin('zoltar')
+
+    while True:
+        button = Button(BUTTON_GPIO)
+        if args.local:
+            a_zoltar = Zoltar()
+            button.when_pressed = a_zoltar.stop_moving
+            a_zoltar.is_moving = True
+            a_zoltar.begin_moving()
+        if wof.available():
+            (origin, message) = wof.recv()
+            if message == 'RESET':
+                a_zoltar = Zoltar()
+                button.when_pressed = a_zoltar.stop_moving
+                a_zoltar.is_moving = True
+                a_zoltar.begin_moving()
+            else:
+                print('Unknown message: ', message)
+        sleep(1)
