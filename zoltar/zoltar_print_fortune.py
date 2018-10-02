@@ -13,7 +13,7 @@ fortunes = open('./fortunes.txt').read().splitlines()
 # picking a fortune string at random
 fortune = random.choice(fortunes)
 
-# Whichever fortune we pick, we need to 
+# Whichever fortune we pick, we need to
 # 1) prepend with a space for consistency with the splitting algorithm
 # 2) prepend with a phrase of our choosing for the fortune
 # 3) postpend with a space for algorithm splitting
@@ -25,7 +25,7 @@ queue = []
 # if our fortune is under 30 characters, we're okay to just send it through
 if len(fortune) <= MAX_CHARACTER_LIMIT:
     spaceIndexes = -1
-    queue = [ fortune ] 
+    queue = [ fortune ]
 else:
     spaceIndexes = findSpaces(fortune)
 
@@ -33,11 +33,11 @@ else:
 lastSplitIdx = -1;
 
 # if it's greater than -1, we need to perform iteration through the string
-if spaceIndexes > -1:
+if spaceIndexes != -1:
     # get both the index and value of item
     for idx,value in enumerate(spaceIndexes):
         # check to see if the value is greater than 40 times the current offset
-        if value > MAX_CHARACTER_LIMIT * ( len(queue) + 1 ): 
+        if value > MAX_CHARACTER_LIMIT * ( len(queue) + 1 ):
             # for the first one to exceed 40, we want the one BEFORE it
             # we start at 0 for now
             startIdx = 0
@@ -71,7 +71,7 @@ from Adafruit_Thermal import *
 printer = Adafruit_Thermal("/dev/serial0", 19200, timeout=5)
 
 printer.feed(1)      # whitespace at the top of the print
-printer.justify('C') # justify center 
+printer.justify('C') # justify center
 printer.setSize('M') # Mid size text
 printer.boldOn()     # bold the text in this
 
