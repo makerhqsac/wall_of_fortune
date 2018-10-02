@@ -25,17 +25,17 @@ class Zoltar(object):
     def begin_moving(self):
         self.left_eye.on()
         self.right_eye.on()
-        servo = AngularServo(SERVO_GPIO,
+        self.servo = AngularServo(SERVO_GPIO,
                      min_angle=SERVO_MIN_ANGLE,
                      max_angle=SERVO_MAX_ANGLE,
                      initial_angle=SERVO_INITIAL_ANGLE)
         while self.is_moving:
             for x in reversed(range(0, 179)):
-                servo.angle = x
+                self.servo.angle = x
                 sleep(0.01)
             for x in range(0, 179):
-                servo.angle = x
-                if servo.angle == 0 :
+                self.servo.angle = x
+                if self.servo.angle == 0 :
                     sleep(0.5)
                 else:
                     sleep(0.01)
@@ -76,7 +76,7 @@ class Zoltar(object):
     def cleanup_gpio(self):
         self.left_eye.close()
         self.right_eye.close()
-        servo.close()
+        self.servo.close()
 
 
 if __name__ == "__main__":
