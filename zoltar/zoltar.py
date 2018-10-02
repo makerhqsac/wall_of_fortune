@@ -73,8 +73,9 @@ if __name__ == "__main__":
     wof = comms.Comms()
     wof.begin('zoltar')
 
+    button = Button(BUTTON_GPIO)
+
     while True:
-        button = Button(BUTTON_GPIO)
         if args.local:
             a_zoltar = Zoltar()
             button.when_pressed = a_zoltar.stop_moving
@@ -82,11 +83,13 @@ if __name__ == "__main__":
             a_zoltar.begin_moving()
         if wof.available():
             (origin, message) = wof.recv()
-            if message == 'RESET':
+            if message == 'RESET' and origin == 'colormatch':
                 a_zoltar = Zoltar()
                 button.when_pressed = a_zoltar.stop_moving
                 a_zoltar.is_moving = True
                 a_zoltar.begin_moving()
+                wof.send('RESET')
             else:
                 print('Unknown message: ', message)
+                print('Unknown origin: ', origin)
         sleep(1)
