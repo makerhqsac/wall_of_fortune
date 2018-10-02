@@ -1,4 +1,5 @@
 from gpiozero import AngularServo, Button, LED
+import subprocess
 from time import sleep
 from util import comms
 import argparse
@@ -48,6 +49,13 @@ class Zoltar(object):
         self.right_eye.on()
 
     def finale(self):
+        self.flashing_eyes()
+        self.print_fortune()
+
+    def print_fortune(self):
+        subprocess.Popen(['python3','zoltar/zoltar_print_fortune.py'])
+
+    def flashing_eyes(self):
         self.eyes_off()
         sleep(1)
         self.eyes_on()
