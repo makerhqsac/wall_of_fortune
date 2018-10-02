@@ -2,7 +2,7 @@ from gpiozero import AngularServo, Button, LED
 import os
 import subprocess
 from time import sleep
-from util import comms
+from utils import comms
 import argparse
 
 SERVO_GPIO          = 19
