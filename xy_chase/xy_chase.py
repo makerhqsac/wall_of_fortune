@@ -34,11 +34,12 @@ ROUTES = [
 [5,6,0],
 [6,0,1]
 ];
+
 ROUTELENGTH = 3
 ROUTES = 5
-currentRoute = 0
-routeIndex = 0
-timeout = 15
+current_route = 0
+route_index = 0
+timeout = 60
 threshold = 3
 
 spi = spidev.SpiDev()
@@ -84,10 +85,10 @@ def sensor_callback(channel):
     next_location()
 
 def next_location():
-  routeIndex += 1
+  route_index += 1
   # Do game logic here. Advance to next location or win the level.
-  if routeIndex < ROUTELENGTH :
-    current = ROUTES[currentRoute][routeIndex]
+  if route_index < ROUTELENGTH :
+    current = ROUTES[current_route][route_index]
     clear_leds()
     set_led_on(current)
   else:
@@ -95,17 +96,17 @@ def next_location():
 
 def winner():
     print("winner!")
-    currentRoute += 1
-    routeIndex = 0
-    if currentRoute >= 5:
-      currentRoute = 0
+    current_route += 1
+    route_index = 0
+    if current_route >= 5:
+      current_route = 0
 
 def loser():
     print("loser!")
-    currentRoute += 1
-    routeIndex = 0
-    if currentRoute >= 5:
-      currentRoute = 0
+    current_route += 1
+    route_index = 0
+    if current_route >= 5:
+      current_route = 0
 
 def clear_leds():
   for l in LEDS:
@@ -135,7 +136,7 @@ def main():
     set_led_on(current)
     while True :
       mag_level = read_channel(current)
-      mag_volts = convert_volts(current,2)
+      mag_volts = convert_volts(mag_level,2)
       if (mag_volts > threshold):
         next_location()
         clear_leds()
