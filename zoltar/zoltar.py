@@ -102,7 +102,7 @@ if __name__ == "__main__":
                 a_zoltar = Zoltar()
                 a_zoltar.is_moving = True
                 a_zoltar.begin_moving()
-                wof.send('RESET')
+                wof.send('COMPLETE')
             else:
                 print('Unknown message: ', message)
                 print('Unknown origin: ', origin)
