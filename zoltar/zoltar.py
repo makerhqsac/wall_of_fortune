@@ -56,7 +56,7 @@ class Zoltar(object):
 
     def print_fortune(self):
         zoltar_dir = os.getenv('ZOLTAR_DIR')
-        subprocess.Popen(['python','zoltar/zoltar_print_fortune.py'], cwd=zoltar_dir)
+        subprocess.Popen(['python','zoltar_print_fortune.py'], cwd=zoltar_dir)
 
     def flashing_eyes(self):
         self.eyes_off()
