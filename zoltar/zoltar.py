@@ -1,4 +1,5 @@
 from gpiozero import AngularServo, Button, LED
+import os
 import subprocess
 from time import sleep
 from util import comms
@@ -51,9 +52,11 @@ class Zoltar(object):
     def finale(self):
         self.flashing_eyes()
         self.print_fortune()
+        self.cleanup_gpio()
 
     def print_fortune(self):
-        subprocess.Popen(['python3','zoltar/zoltar_print_fortune.py'])
+        zoltar_dir = os.getenv('ZOLTAR_DIR')
+        subprocess.Popen(['python','zoltar/zoltar_print_fortune.py'], cwd=zoltar_dir)
 
     def flashing_eyes(self):
         self.eyes_off()
@@ -69,8 +72,11 @@ class Zoltar(object):
     def stop_moving(self):
         print('Button detected')
         self.is_moving = False
-        self.right_eye.off()
-        self.left_eye.off()
+
+    def cleanup_gpio(self):
+        self.left_eye.close()
+        self.right_eye.close()
+        servo.close()
 
 
 if __name__ == "__main__":
