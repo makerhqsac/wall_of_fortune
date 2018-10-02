@@ -6,7 +6,9 @@
 #                                                                             #
 #    For more information, see https://github.com/makerhqsac/wall_of_fortune  #
 #                                                                             #
-#    Written By Sean Walker <me@seanwalker.org>                               #
+#    Written By:                                                              #
+#    Sean Walker <me@seanwalker.org>                                          #
+#    Richard Julian <richard@rjulian.net>                                     #
 #    Sponsored by MakerHQ - http://www.makerhq.org                            #
 #                                                                             #
 #    Licensed under the GPLv3 - https://www.gnu.org/licenses/gpl-3.0.txt      #
@@ -21,6 +23,7 @@ import spidev
 
 HALL_PIN = 17
 LEDS = [4,17,18,27,22,23,24]
+
 current = 0
 ROUTES = [
 [0,1,2],
@@ -42,21 +45,33 @@ spi = spidev.SpiDev()
 spi.open(0,0)
 spi.max_speed_hz = 1000000
 
+# Tell GPIO library to use GPIO references
+GPIO.setmode(GPIO.BCM)
+
+# Set Switch GPIO as input
+# Pull high by default
+GPIO.setup(HALL_PIN , GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+for l in LEDS:
+  GPIO.setup(l, GPIO.OUT)
+GPIO.add_event_detect(HALL_PIN, GPIO.BOTH, callback=sensor_callback, bouncetime=200)
+
+
 # Function to read SPI data from MCP3008 chip
 # Channel must be an integer 0-7
-def ReadChannel(channel):
+def read_channel(channel):
   adc = spi.xfer2([1,(8+channel)<<4,0])
   data = ((adc[1]&3) << 8) + adc[2]
   return data
- 
+
 # Function to convert data to voltage level,
 # rounded to specified number of decimal places.
-def ConvertVolts(data,places):
+def convert_volts(data,places):
   volts = (data * 3.3) / float(1023)
   volts = round(volts,places)
   return volts
 
-def sensorCallback(channel):
+def sensor_callback(channel):
   # Called if sensor output changes
   timestamp = time.time()
   stamp = datetime.datetime.fromtimestamp(timestamp).strftime('%H:%M:%S')
@@ -66,15 +81,15 @@ def sensorCallback(channel):
   else:
     # Magnet
     print("Sensor LOW " + stamp)
-    nextLocation()
+    next_location()
 
-def nextLocation():
+def next_location():
   routeIndex += 1
   # Do game logic here. Advance to next location or win the level.
   if routeIndex < ROUTELENGTH :
     current = ROUTES[currentRoute][routeIndex]
-    clearLeds()
-    setLedOn(current)
+    clear_leds()
+    set_led_on(current)
   else:
     winner()
 
@@ -92,13 +107,13 @@ def loser():
     if currentRoute >= 5:
       currentRoute = 0
 
-def clearLeds():
+def clear_leds():
   for l in LEDS:
     GPIO.output(l,GPIO.LOW)
 
-def setLedOn(channel):
+def set_led_on(channel):
   GPIO.output(LEDS[channel],GPIO.HIGH)
-  
+
 
 
 def main():
@@ -107,42 +122,30 @@ def main():
   # GPIO cleanup function. This will also prevent
   # the user seeing lots of unnecessary error
   # messages.
-  
+
   current = 0
 
   # Get initial reading
-  sensorCallback(HALL_PIN)
+  sensor_callback(HALL_PIN)
 
   try:
     start_time = time.time()
     # Loop until users quits with CTRL-C
-    clearLeds()
-    setLedOn(current)
+    clear_leds()
+    set_led_on(current)
     while True :
-      mag_level = ReadChannel(current)
-      mag_volts = ConvertVolts(current,2)
+      mag_level = read_channel(current)
+      mag_volts = convert_volts(current,2)
       if (mag_volts > threshold):
-        nextLocation()
-        clearLeds()
-        setLedOn(current)
+        next_location()
+        clear_leds()
+        set_led_on(current)
       if (time.time() - start_time > timeout):
         loser()
 
   except KeyboardInterrupt:
     # Reset GPIO settings
     GPIO.cleanup()
-
-# Tell GPIO library to use GPIO references
-GPIO.setmode(GPIO.BCM)
-
-print("Setup GPIO pin as input")
-
-# Set Switch GPIO as input
-# Pull high by default
-GPIO.setup(HALL_PIN , GPIO.IN, pull_up_down=GPIO.PUD_UP)
-for l in LEDS:
-  GPIO.setup(l, GPIO.OUT)
-GPIO.add_event_detect(HALL_PIN, GPIO.BOTH, callback=sensorCallback, bouncetime=200)
 
 if __name__=="__main__":
    main()
