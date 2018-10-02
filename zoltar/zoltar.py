@@ -21,6 +21,8 @@ class Zoltar(object):
         self.is_moving = False
         self.left_eye = LED(LED1_GPIO)
         self.right_eye = LED(LED2_GPIO)
+        self.button = Button(BUTTON_GPIO)
+        self.button.when_pressed = self.stop_moving
 
     def begin_moving(self):
         self.left_eye.on()
@@ -77,6 +79,7 @@ class Zoltar(object):
         self.left_eye.close()
         self.right_eye.close()
         self.servo.close()
+        self.button.close()
 
 
 if __name__ == "__main__":
@@ -87,19 +90,16 @@ if __name__ == "__main__":
     wof = comms.Comms()
     wof.begin('zoltar')
 
-    button = Button(BUTTON_GPIO)
 
     while True:
         if args.local:
             a_zoltar = Zoltar()
-            button.when_pressed = a_zoltar.stop_moving
             a_zoltar.is_moving = True
             a_zoltar.begin_moving()
         if wof.available():
             (origin, message) = wof.recv()
             if message == 'RESET' and origin == 'colormatch':
                 a_zoltar = Zoltar()
-                button.when_pressed = a_zoltar.stop_moving
                 a_zoltar.is_moving = True
                 a_zoltar.begin_moving()
                 wof.send('RESET')
