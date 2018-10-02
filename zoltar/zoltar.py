@@ -98,7 +98,7 @@ if __name__ == "__main__":
             a_zoltar.begin_moving()
         if wof.available():
             (origin, message) = wof.recv()
-            if message == 'RESET' and origin == 'colormatch':
+            if message == 'RESET':
                 a_zoltar = Zoltar()
                 a_zoltar.is_moving = True
                 a_zoltar.begin_moving()
