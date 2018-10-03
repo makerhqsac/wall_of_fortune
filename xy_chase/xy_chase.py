@@ -22,9 +22,10 @@ import RPi.GPIO as GPIO
 import spidev
 
 HALL_PIN = 17
-LEDS = [4,17,18,27,22,23,24]
+LEDS = [25, 5, 6, 12, 13, 19, 26]
 
 current = 0
+
 ROUTES = [
 [0,1,2],
 [1,2,3],
@@ -34,6 +35,16 @@ ROUTES = [
 [5,6,0],
 [6,0,1]
 ];
+
+LED_MAPPING = {
+        25 : 'NewAmsterdam',
+        5 : 'Lima',
+        6 : 'BuenosAires',
+        12 : 'London',
+        13 : 'Venice',
+        19 : 'Capetown',
+        26 : 'Ceylon'
+        }
 
 ROUTELENGTH = 3
 ROUTES = 5
