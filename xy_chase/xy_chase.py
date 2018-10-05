@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from time import sleep
+from utils import comms
 import time
 import datetime
 import random
@@ -36,6 +37,9 @@ HALL_MAPPING = {
         }
 
 TIMEOUT = 60
+
+def send_signal(message):
+    wof.send(message)
 
 def read_introduction():
     play_static_audio('YouAreTheCaptain.ogg')
@@ -163,10 +167,12 @@ class XyChase(object):
     def lose_game(self):
         print('Oh no, you lost')
         self.cleanup_hardware()
+        send_signal('RESET')
 
     def win_game(self):
         print('You won, congrats!')
         self.cleanup_hardware()
+        send_signal('CARTDONE')
 
     def begin_game(self):
         read_introduction()
@@ -181,10 +187,15 @@ class XyChase(object):
             self.check_game_status()
 
 def main():
+    wof = comms.Comms
+    wof.begin('cartography')
+
     while True :
-        chase = XyChase()
-        chase.begin_game()
-        sleep(10)
+        if wof.available():
+            (origin, message) = wof.recv()
+            if message == 'COMPLETE' and origin == 'zoltar'):
+                chase = XyChase()
+                chase.begin_game()
 
 if __name__=="__main__":
    main()
