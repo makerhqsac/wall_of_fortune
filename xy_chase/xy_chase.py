@@ -2,6 +2,7 @@
 from time import sleep
 import time
 import datetime
+import random
 from gpiozero import LED, Button
 
 ROUTES = [
@@ -46,7 +47,7 @@ class XyChase(object):
         self.initiate_leds()
         self.create_mapping()
         self.routes_completed = 0
-        self.current_route = 0
+        self.current_route = random.randint(0,6)
         self.current_destination = 0
         self.route_status = [ 'Uninitiated', 'Uninitiated', 'Uninitiated' ]
 
