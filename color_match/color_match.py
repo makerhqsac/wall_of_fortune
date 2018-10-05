@@ -135,22 +135,51 @@ def blink_panels(color, times, delay, wait=0):
         time.sleep(delay)
 
 
+def generate_color(num_colors=3):
+
+    r_rand = 0
+    g_rand = 0
+    b_rand = 0
+
+    colors = ['r','g','b']
+    random.shuffle(colors)
+
+    for i in range(num_colors):
+        color = colors.pop(0)
+        if color == 'r':
+            r_rand = random.randint(1, 7)
+        if color == 'g':
+            g_rand = random.randint(1, 7)
+        if color == 'b':
+            b_rand = random.randint(0, 3)
+
+    target_r = r_rand << COLOR_HIGHEST_BIT - 2
+    target_r &= 0xE0
+
+    target_g = g_rand << COLOR_HIGHEST_BIT - 2
+    target_g &= 0xE0
+
+    target_b = b_rand << COLOR_HIGHEST_BIT - 2
+    target_b &= 0xC0
+
+    return Color(target_r, target_g, target_b)
+
+
 def run_game(args):
 
     target_color = 0
     switch_color = read_switches()
 
+    if args.easy:
+        num_colors = 2
+    else:
+        num_colors = 3
+
     if args.target:
         target_color = int(args.target)
     else:
         while target_color == 0 or target_color == switch_color:
-            target_r = random.randint(1, 7) << COLOR_HIGHEST_BIT - 2
-            target_r &= 0xE0
-            target_g = random.randint(1, 7) << COLOR_HIGHEST_BIT - 2
-            target_g &= 0xE0
-            target_b = random.randint(0, 3) << COLOR_HIGHEST_BIT - 2
-            target_b &= 0xC0
-            target_color = Color(target_r, target_g, target_b)
+            target_color = generate_color(num_colors)
 
     if args.debug:
         print("Starting game with target color bits: {0:08b} {1:08b} {2:08b}".format((target_color >> 16) & 0xFF,
@@ -198,6 +227,7 @@ def run_main():
     parser.add_argument('-d', '--debug', action='store_true', help='enable debug mode')
     parser.add_argument('-x', '--target', action='store', help='set target to specific color')
     parser.add_argument('-l', '--local', action='store_true', help='local mode - play game over and over')
+    parser.add_argument('-e', '--easy', action='store_true', help='easy mode - two colors only for target')
     args = parser.parse_args()
 
     if args.target:
@@ -218,9 +248,10 @@ def run_main():
                 (origin, message) = wof.recv()
                 if args.debug:
                     print("Received network message from {0}: {1}".format(origin, message))
-                if message == 'RESET':
+                if message == 'CARTDONE':
                     run_game(args)
                     color_wipe(Color(0, 0, 0), 0)
+                    wof.send('RESET')
                 else:
                     if args.debug:
                         print("Unknown message: {0}".format(message))
