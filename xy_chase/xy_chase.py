@@ -41,7 +41,7 @@ def read_introduction():
     play_static_audio('YouAreTheCaptain.ogg')
 
 def play_static_audio(file_name):
-    file_path = f'./audio/{file_name}'
+    file_path = './audio/%s' % (file_name)
     subprocess.Popen(['ogg123',file_path])
 
 
@@ -117,7 +117,7 @@ class XyChase(object):
 
     def pickup_cargo(self):
         destination = ROUTES[self.current_route][self.current_destination]
-        cargo_file = f'TakeCargo{destination}.ogg'
+        cargo_file = 'TakeCargo%s.ogg' % (destination)
         play_static_audio(cargo_file)
         self.mapping[destination][0].when_pressed = self.next_destination
         sleep(0.5)
@@ -128,7 +128,7 @@ class XyChase(object):
         destination = ROUTES[self.current_route][self.current_destination]
         self.deliver_next_cargo()
         play_static_audio('StormAtSea.ogg')
-        harbor_file = f'MakeHarbors{destination}.ogg'
+        harbor_file = 'MakeHarbors%s.ogg' % (destination)
         play_static_audio(harbor_file)
         self.mapping[destination][0].when_pressed = self.next_destination
         sleep(0.5)
@@ -138,7 +138,7 @@ class XyChase(object):
     def deliver_cargo(self):
         destination = ROUTES[self.current_route][self.current_destination]
         play_static_audio('SeasHaveCalmed.ogg')
-        deliver_file = f'Deliver{destination}.ogg'
+        deliver_file = 'Deliver%s.ogg' % (destination)
         play_static_audio(deliver_file)
         self.mapping[destination][0].when_pressed = self.next_destination
         sleep(0.5)
@@ -147,7 +147,7 @@ class XyChase(object):
 
     def deliver_next_cargo(self):
         destination = ROUTES[self.current_route][self.current_destination + 1]
-        deliver_file = f'Deliver{destination}.ogg'
+        deliver_file = 'Deliver%s.ogg' % (destination)
         play_static_audio(deliver_file)
 
     def check_game_status(self):
