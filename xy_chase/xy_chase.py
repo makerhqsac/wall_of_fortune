@@ -164,7 +164,7 @@ class XyChase(object):
         self.mapping[destination][1].off()
 
     def check_game_status(self):
-        if self.route_status[self.current_destination] == 'Uninitiated':
+        if self.current_destination != 3 and self.route_status[self.current_destination] == 'Uninitiated':
             route_state = self.route_status[self.current_destination]
             if self.current_destination == 0 and route_state != 'InProgress':
                 self.pickup_cargo()
@@ -181,6 +181,7 @@ class XyChase(object):
     def win_game(self):
         play_static_audio('PirateWon.ogg')
         self.cleanup_hardware()
+        sleep(2)
         send_signal('CARTDONE')
 
     def begin_game(self):
