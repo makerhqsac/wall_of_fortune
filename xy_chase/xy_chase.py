@@ -1,21 +1,5 @@
 #!/usr/bin/env python3
-###############################################################################
-# hall_detect.py                                                              #
-#                                                                             #
-#    Detect magnet over surface of map for Cartesian game                     #
-#                                                                             #
-#    For more information, see https://github.com/makerhqsac/wall_of_fortune  #
-#                                                                             #
-#    Written By:                                                              #
-#    Sean Walker <me@seanwalker.org>                                          #
-#    Richard Julian <richard@rjulian.net>                                     #
-#    Sponsored by MakerHQ - http://www.makerhq.org                            #
-#                                                                             #
-#    Licensed under the GPLv3 - https://www.gnu.org/licenses/gpl-3.0.txt      #
-###############################################################################
-
-
-# Import required libraries
+from time import sleep
 import time
 import datetime
 from gpiozero import LED, Button
@@ -28,7 +12,7 @@ ROUTES = [
 ['Venice','Capetown','Ceylon'],
 ['Capetown','Ceylon','NewAmsterdam'],
 ['Ceylon','NewAmsterdam','Lima']
-];
+]
 
 LED_MAPPING = {
         25 : 'NewAmsterdam',
@@ -50,10 +34,7 @@ HALL_MAPPING = {
         24 : 'Ceylon'
         }
 
-ROUTELENGTH = 3
-ROUTES = 5
 TIMEOUT = 60
-threshold = 3
 
 def read_introduction():
     print('You are the captain')
@@ -61,9 +42,9 @@ def read_introduction():
 class XyChase(object):
     def __init__(self):
         print('A new chase begins')
-        initiate_buttons()
-        initiate_leds()
-        create_mapping()
+        self.initiate_buttons()
+        self.initiate_leds()
+        self.create_mapping()
         self.routes_completed = 0
         self.current_route = 0
         self.current_destination = 0
@@ -125,7 +106,7 @@ class XyChase(object):
         destination = ROUTES[self.current_route][self.current_destination]
         self.route_status[self.current_destination] = 'Completed'
         self.mapping[destination][0].when_pressed = None
-        self.mapping[destination][1].off() = None
+        self.mapping[destination][1].off()
         self.current_destination += 1
 
     def pickup_cargo(self):
@@ -184,7 +165,7 @@ class XyChase(object):
             if time.time() - self.start_time > TIMEOUT:
                 self.lose_game()
                 break
-            if self.current_destination = 3:
+            if self.current_destination == 3:
                 self.win_game()
                 break
             self.check_game_status()
