@@ -40,6 +40,8 @@ HALL_MAPPING = {
 TIMEOUT = 60
 
 def send_signal(message):
+    wof = comms.Comms()
+    wof.begin('cartography')
     wof.send(message)
 
 def read_introduction():
