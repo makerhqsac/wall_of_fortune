@@ -2,6 +2,7 @@
 from time import sleep
 from utils import comms
 import time
+import subprocess
 import datetime
 import random
 from gpiozero import LED, Button
@@ -45,8 +46,8 @@ def read_introduction():
     play_static_audio('YouAreTheCaptain.ogg')
 
 def play_static_audio(file_name):
-    file_path = './audio/%s' % (file_name)
-    subprocess.Popen(['ogg123',file_path])
+    file_path = './xy_chase/audio/%s' % (file_name)
+    subprocess.call(['ogg123',file_path])
 
 
 class XyChase(object):
@@ -153,6 +154,11 @@ class XyChase(object):
         destination = ROUTES[self.current_route][self.current_destination + 1]
         deliver_file = 'Deliver%s.ogg' % (destination)
         play_static_audio(deliver_file)
+        self.mapping[destination][0].when_pressed = self.next_destination
+        self.mapping[destination][1].on()
+        sleep(5)
+        self.mapping[destination][0].when_pressed = None
+        self.mapping[destination][1].off()
 
     def check_game_status(self):
         if self.route_status[self.current_destination] == 'Uninitiated':
