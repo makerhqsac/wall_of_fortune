@@ -199,7 +199,7 @@ def main():
     while True :
         if wof.available():
             (origin, message) = wof.recv()
-            if message == 'COMPLETE' and origin == 'zoltar'):
+            if message == 'COMPLETE' and origin == 'zoltar':
                 chase = XyChase()
                 chase.begin_game()
 
