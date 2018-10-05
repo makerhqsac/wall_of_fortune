@@ -159,7 +159,7 @@ class XyChase(object):
         deliver_file = 'Deliver%s.ogg' % (destination)
         play_static_audio(deliver_file)
         self.mapping[destination][1].on()
-        sleep(5)
+        sleep(3)
         self.mapping[destination][0].when_pressed = None
         self.mapping[destination][1].off()
 
