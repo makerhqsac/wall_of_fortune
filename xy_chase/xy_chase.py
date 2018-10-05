@@ -9,13 +9,13 @@ import random
 from gpiozero import LED, Button
 
 ROUTES = [
-['NewAmsterdam','Lima','BuenosAires'],
-['Lima','BuenosAires','London'],
-['BuenosAires','London','Venice'],
-['London','Venice','Capetown'],
-['Venice','Capetown','Ceylon'],
-['Capetown','Ceylon','NewAmsterdam'],
-['Ceylon','NewAmsterdam','Lima']
+['NewAmsterdam','Ceylon','London'],
+['Lima','Capetown','Ceylon'],
+['BuenosAires','Venice','NewAmsterdam'],
+['London','Capetown','Lima'],
+['Venice','Ceylon','BuenosAires'],
+['Capetown','Lima','NewAmsterdam'],
+['Ceylon','London','Lima']
 ]
 
 LED_MAPPING = {
