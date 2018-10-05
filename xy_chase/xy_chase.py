@@ -2,6 +2,7 @@
 from time import sleep
 from utils import comms
 import time
+import os
 import subprocess
 import datetime
 import random
@@ -48,7 +49,8 @@ def read_introduction():
     play_static_audio('YouAreTheCaptain.ogg')
 
 def play_static_audio(file_name):
-    file_path = './xy_chase/audio/%s' % (file_name)
+    root_path = os.getenv('XY_DIR')
+    file_path = '%s/audio/%s' % (root_path, file_name)
     subprocess.call(['ogg123',file_path])
 
 
