@@ -158,7 +158,6 @@ class XyChase(object):
         destination = ROUTES[self.current_route][self.current_destination + 1]
         deliver_file = 'Deliver%s.ogg' % (destination)
         play_static_audio(deliver_file)
-        self.mapping[destination][0].when_pressed = self.next_destination
         self.mapping[destination][1].on()
         sleep(5)
         self.mapping[destination][0].when_pressed = None
