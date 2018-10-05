@@ -138,7 +138,7 @@ class XyChase(object):
         self.route_status[self.current_destination] = 'InProgress'
 
     def deliver_next_cargo(self):
-        destination = ROUTES[self.current_route + 1][self.current_destination]
+        destination = ROUTES[self.current_route][self.current_destination + 1]
         print('Deliver your cargo to ', destination)
 
     def check_game_status(self):
