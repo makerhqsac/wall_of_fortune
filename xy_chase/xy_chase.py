@@ -193,7 +193,7 @@ class XyChase(object):
             self.check_game_status()
 
 def main():
-    wof = comms.Comms
+    wof = comms.Comms()
     wof.begin('cartography')
 
     while True :
