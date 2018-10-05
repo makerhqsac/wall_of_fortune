@@ -38,7 +38,12 @@ HALL_MAPPING = {
 TIMEOUT = 60
 
 def read_introduction():
-    print('You are the captain')
+    play_static_audio('YouAreTheCaptain.ogg')
+
+def play_static_audio(file_name):
+    file_path = f'./audio/{file_name}'
+    subprocess.Popen(['ogg123',file_path])
+
 
 class XyChase(object):
     def __init__(self):
@@ -112,7 +117,8 @@ class XyChase(object):
 
     def pickup_cargo(self):
         destination = ROUTES[self.current_route][self.current_destination]
-        print('Pick up cargo at', destination)
+        cargo_file = f'TakeCargo{destination}.ogg'
+        play_static_audio(cargo_file)
         self.mapping[destination][0].when_pressed = self.next_destination
         sleep(0.5)
         self.mapping[destination][1].on()
@@ -121,8 +127,9 @@ class XyChase(object):
     def safe_harbor(self):
         destination = ROUTES[self.current_route][self.current_destination]
         self.deliver_next_cargo()
-        print('There is a storm at sea.')
-        print('Take safe harbor at ', destination)
+        play_static_audio('StormAtSea.ogg')
+        harbor_file = f'MakeHarbors{destination}.ogg'
+        play_static_audio(harbor_file)
         self.mapping[destination][0].when_pressed = self.next_destination
         sleep(0.5)
         self.mapping[destination][1].on()
@@ -130,8 +137,9 @@ class XyChase(object):
 
     def deliver_cargo(self):
         destination = ROUTES[self.current_route][self.current_destination]
-        print('The seas have calmed')
-        print('Deliver your cargo to ', destination)
+        play_static_audio('SeasHaveCalmed.ogg')
+        deliver_file = f'Deliver{destination}.ogg'
+        play_static_audio(deliver_file)
         self.mapping[destination][0].when_pressed = self.next_destination
         sleep(0.5)
         self.mapping[destination][1].on()
@@ -139,7 +147,8 @@ class XyChase(object):
 
     def deliver_next_cargo(self):
         destination = ROUTES[self.current_route][self.current_destination + 1]
-        print('Deliver your cargo to ', destination)
+        deliver_file = f'Deliver{destination}.ogg'
+        play_static_audio(deliver_file)
 
     def check_game_status(self):
         if self.route_status[self.current_destination] == 'Uninitiated':
