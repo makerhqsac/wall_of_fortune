@@ -165,12 +165,12 @@ class XyChase(object):
                 self.deliver_cargo()
 
     def lose_game(self):
-        print('Oh no, you lost')
+        play_static_audio('PirateLost.ogg')
         self.cleanup_hardware()
         send_signal('RESET')
 
     def win_game(self):
-        print('You won, congrats!')
+        play_static_audio('PirateWon.ogg')
         self.cleanup_hardware()
         send_signal('CARTDONE')
 
