@@ -3,19 +3,20 @@ from time import sleep
 from utils import comms
 import time
 import os
+import sys
 import subprocess
 import datetime
 import random
 from gpiozero import LED, Button
 
 ROUTES = [
-['NewAmsterdam','Ceylon','London'],
-['Lima','Capetown','Ceylon'],
-['BuenosAires','Venice','NewAmsterdam'],
+['NewAmsterdam','Capetown','London'],
+['Lima','Capetown','Venice'],
+['Lima','Venice','NewAmsterdam'],
 ['London','Capetown','Lima'],
-['Venice','Ceylon','BuenosAires'],
+['Venice','Capetown','NewAmsterdam'],
 ['Capetown','Lima','NewAmsterdam'],
-['Ceylon','London','Lima']
+['Venice','London','Lima']
 ]
 
 LED_MAPPING = {
@@ -199,13 +200,18 @@ class XyChase(object):
 def main():
     wof = comms.Comms()
     wof.begin('cartography')
-
-    while True :
-        if wof.available():
-            (origin, message) = wof.recv()
-            if message == 'COMPLETE' and origin == 'zoltar':
-                chase = XyChase()
-                chase.begin_game()
+    if len(sys.argv) > 1 and sys.argv[1] == '-l':
+        while True:
+            chase = XyChase()
+            chase.begin_game()
+            sleep(15)
+    else:
+        while True:
+            if wof.available():
+                (origin, message) = wof.recv()
+                if message == 'COMPLETE' and origin == 'zoltar':
+                    chase = XyChase()
+                    chase.begin_game()
 
 if __name__=="__main__":
    main()
