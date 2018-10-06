@@ -16,13 +16,14 @@ LED2_GPIO           = 27
 
 
 class Zoltar(object):
-    def __init__(self):
+    def __init__(self, comm_client):
         print('Finally, a Zoltar!')
         self.is_moving = False
         self.left_eye = LED(LED1_GPIO)
         self.right_eye = LED(LED2_GPIO)
         self.button = Button(BUTTON_GPIO)
         self.button.when_pressed = self.stop_moving
+        self.communications = comm_client
 
     def begin_moving(self):
         self.left_eye.on()
@@ -32,6 +33,10 @@ class Zoltar(object):
                      max_angle=SERVO_MAX_ANGLE,
                      initial_angle=SERVO_INITIAL_ANGLE)
         while self.is_moving:
+            if self.communications.available():
+                (origin, message) = self.communications.recv()
+                if message == 'COIN':
+                    break
             for x in reversed(range(0, 179)):
                 self.servo.angle = x
                 sleep(0.01)
@@ -99,7 +104,7 @@ if __name__ == "__main__":
         if wof.available():
             (origin, message) = wof.recv()
             if message == 'RESET':
-                a_zoltar = Zoltar()
+                a_zoltar = Zoltar(wof)
                 a_zoltar.is_moving = True
                 a_zoltar.begin_moving()
                 sleep(3)
