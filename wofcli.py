@@ -18,7 +18,9 @@ from utils import comms
 def run_main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-n', '--name', action='store', help='set source name, defaults to admin')
-    parser.add_argument('-m', '--message', action='store', help='message to send')
+    parser.add_argument('-p', '--port', action='store', help='network port to use, use default if not specified')
+    parser.add_argument('-m', '--message', action='store', help='message to send', required=True)
+
     args = parser.parse_args()
 
     wof = comms.Comms()
@@ -28,7 +30,10 @@ def run_main():
     else:
         wof.begin('admin')
 
-    wof.send(args.message)
+    if args.port:
+        wof.send(args.message, int(args.port))
+    else:
+        wof.send(args.message)
 
 
 # Main program logic follows:
