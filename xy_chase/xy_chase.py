@@ -165,7 +165,7 @@ class XyChase(object):
         self.mapping[destination][1].off()
 
     def check_game_status(self):
-        if self.current_destination != 3 and self.route_status[self.current_destination] == 'Uninitiated':
+        if self.current_destination < 3 and self.route_status[self.current_destination] == 'Uninitiated':
             route_state = self.route_status[self.current_destination]
             if self.current_destination == 0 and route_state != 'InProgress':
                 self.pickup_cargo()
@@ -204,7 +204,7 @@ def main():
         while True:
             chase = XyChase()
             chase.begin_game()
-            sleep(15)
+            sleep(5)
     else:
         while True:
             if wof.available():
